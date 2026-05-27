@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a0a2e">
+<title>PetVault</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0d0720;
+    --bg2: #160d35;
+    --bg3: #1e1245;
+    --card: #231558;
+    --card2: #2a1a6e;
+    --accent: #f5a623;
+    --accent2: #ff6b6b;
+    --accent3: #4ecdc4;
+    --accent4: #a29bfe;
+    --green: #00d68f;
+    --text: #f0eaff;
+    --text2: #a89cc8;
+    --gold: #ffd700;
+    --radius: 18px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  /* Starfield background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(162,155,254,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(78,205,196,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 1;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #1e1245, #2a1a6e);
+    padding: 12px 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid rgba(162,155,254,0.2);
+    flex-shrink: 0;
+  }
+  .header-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 24px;
+    background: linear-gradient(135deg, var(--accent), var(--accent4));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+  }
+  .coins-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,215,0,0.12);
+    border: 1.5px solid rgba(255,215,0,0.3);
+    border-radius: 50px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .coins-display:active { transform: scale(0.95); }
+  .coin-icon { width: 20px; height: 20px; }
+  .coins-amount {
+    font-family: 'Fredoka One', cursive;
+    font-size: 18px;
+    color: var(--gold);
+  }
+
+  /* ── NAV ── */
+  .nav {
+    display: flex;
+    background: var(--bg2);
+    border-top: 2px solid rgba(162,155,254,0.15);
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border: none;
+    background: none;
+    color: var(--text2);
+    font-family: 'Nunito', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .nav-btn.active {
+    color: var(--accent4);
+  }
+  .nav-btn.active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: var(--accent4);
+    border-radius: 0 0 4px 4px;
+  }
+  .nav-icon { font-size: 20px; line-height: 1; }
+
+  /* ── SCREENS ── */
+  .screen {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+    display: none;
+  }
+  .screen.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+    border: 1.5px solid rgba(162,155,254,0.1);
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 16px;
+    color: var(--accent4);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    border: none;
+    border-radius: 50px;
+    padding: 10px 20px;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:active { transform: scale(0.94); }
+  .btn-primary { background: linear-gradient(135deg, #7c3aed, #4c1d95); color: white; box-shadow: 0 4px 16px rgba(124,58,237,0.4); }
+  .btn-gold { background: linear-gradient(135deg, #f5a623, #e08800); color: #1a0a00; box-shadow: 0 4px 16px rgba(245,166,35,0.4); }
+  .btn-green { background: linear-gradient(135deg, #00d68f, #00a86b); color: #001a10; box-shadow: 0 4px 16px rgba(0,214,143,0.3); }
+  .btn-red { background: linear-gradient(135deg, #ff6b6b, #c0392b); color: white; box-shadow: 0 4px 16px rgba(255,107,107,0.3); }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn-full { width: 100%; justify-content: center; }
+  .btn:disabled { opacity: 0.45; pointer-events: none; }
+
+  /* ── HOME SCREEN ── */
+  .active-pets-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .pet-card {
+    background: var(--card2);
+    border-radius: 16px;
+    padding: 14px;
+    border: 1.5px solid rgba(162,155,254,0.15);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .pet-card:active { transform: scale(0.96); }
+  .pet-card-art { width: 80px; height: 80px; margin: 0 auto 8px; }
+  .pet-card-name { font-weight: 800; font-size: 13px; color: var(--text); }
+  .pet-card-level { font-size: 11px; color: var(--accent4); font-weight: 700; }
+  .pet-card-mood {
+    font-size: 10px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+  .stat-bar {
+    height: 5px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    margin-top: 5px;
+    overflow: hidden;
+  }
+  .stat-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.4s;
+  }
+  .empty-slot {
+    background: rgba(162,155,254,0.05);
+    border: 2px dashed rgba(162,155,254,0.2);
+    border-radius: 16px;
+    padding: 24px 14px;
+    text-align: center;
+    color: var(--text2);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .empty-slot-plus { font-size: 28px; color: rgba(162,155,254,0.3); line-height: 1; margin-bottom: 4px; }
+
+  /* ── SAVINGS INPUT ── */
+  .savings-input-wrap {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .savings-input-wrap input {
+    flex: 1;
+    background: rgba(255,255,255,0.07);
+    border: 1.5px solid rgba(162,155,254,0.2);
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    outline: none;
+  }
+  .savings-input-wrap input:focus { border-color: var(--accent4); }
+  .savings-input-wrap input::placeholder { color: var(--text2); font-weight: 400; }
+
+  /* ── HATCH SCREEN ── */
+  .eggs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .egg-shop-item {
+    background: var(--card2);
+    border-radius: 14px;
+    padding: 12px 8px;
+    text-align: center;
+    border: 1.5px solid rgba(162,155,254,0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .egg-shop-item:active { transform: scale(0.95); }
+  .egg-art { width: 56px; height: 70px; margin: 0 auto 6px; }
+  .egg-name { font-weight: 800; font-size: 11px; color: var(--text); }
+  .egg-price {
+    font-size: 12px;
+    color: var(--gold);
+    font-weight: 700;
+    margin-top: 3px;
+  }
+  .egg-rarity {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 50px;
+    display: inline-block;
+    margin-top: 4px;
+    font-weight: 700;
+  }
+  .rarity-common { background: rgba(160,160,160,0.2); color: #aaa; }
+  .rarity-rare { background: rgba(74,144,226,0.2); color: #74b9ff; }
+  .rarity-epic { background: rgba(162,155,254,0.2); color: var(--accent4); }
+  .rarity-legend { background: rgba(255,215,0,0.2); color: var(--gold); }
+
+  /* Incubator */
+  .incubator-slot {
+    background: var(--card2);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1.5px solid rgba(162,155,254,0.12);
+  }
+  .incubator-egg { width: 52px; height: 64px; flex-shrink: 0; }
+  .incubator-info { flex: 1; }
+  .incubator-name { font-weight: 800; font-size: 14px; }
+  .incubator-progress {
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .incubator-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent4), var(--accent));
+    border-radius: 10px;
+    transition: width 1s linear;
+  }
+  .incubator-time { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+  /* ── PET DETAIL MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 20px 32px;
+    width: 100%;
+    max-width: 480px;
+    border-top: 2px solid rgba(162,155,254,0.2);
+    animation: slideUp 0.3s ease;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 0 auto 16px; }
+  .modal-pet-art { width: 120px; height: 120px; margin: 0 auto 12px; }
+  .modal-pet-name { font-family: 'Fredoka One', cursive; font-size: 26px; text-align: center; }
+  .modal-pet-sub { text-align: center; color: var(--text2); font-size: 13px; margin-bottom: 16px; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-item { background: var(--card); border-radius: 12px; padding: 10px 12px; }
+  .stat-label { font-size: 10px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-val { font-family: 'Fredoka One', cursive; font-size: 22px; margin-top: 2px; }
+
+  .actions-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .actions-row .btn { flex: 1; justify-content: center; }
+
+  /* ── SHOP ── */
+  .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .shop-item {
+    background: var(--card2);
+    border-radius: 14px;
+    padding: 14px 10px;
+    text-align: center;
+    border: 1.5px solid rgba(162,155,254,0.1);
+  }
+  .shop-item-art { width: 60px; height: 60px; margin: 0 auto 8px; }
+  .shop-item-name { font-weight: 800; font-size: 12px; }
+  .shop-item-desc { font-size: 10px; color: var(--text2); margin: 3px 0 8px; }
+
+  /* ── WALLET ── */
+  .wallet-hero {
+    background: linear-gradient(135deg, #2a1a6e, #4a2090);
+    border-radius: 20px;
+    padding: 24px 20px;
+    text-align: center;
+    margin-bottom: 14px;
+    border: 1.5px solid rgba(162,155,254,0.2);
+  }
+  .wallet-label { font-size: 13px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+  .wallet-amount {
+    font-family: 'Fredoka One', cursive;
+    font-size: 52px;
+    color: var(--gold);
+    line-height: 1.1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .wallet-saved { font-size: 13px; color: var(--green); font-weight: 700; margin-top: 4px; }
+
+  .tx-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .tx-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .tx-earn { background: rgba(0,214,143,0.15); }
+  .tx-spend { background: rgba(255,107,107,0.15); }
+  .tx-info { flex: 1; }
+  .tx-name { font-weight: 700; font-size: 13px; }
+  .tx-date { font-size: 11px; color: var(--text2); }
+  .tx-amount { font-family: 'Fredoka One', cursive; font-size: 17px; }
+  .tx-amount.earn { color: var(--green); }
+  .tx-amount.spend { color: var(--accent2); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--card);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 13px;
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.3s;
+    border: 1.5px solid rgba(162,155,254,0.2);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── HATCH ANIMATION ── */
+  .hatch-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 300;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+  .hatch-overlay.open { display: flex; }
+  .hatch-egg-wrap { animation: eggShake 0.5s infinite; }
+  @keyframes eggShake {
+    0%,100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+  .hatch-cracking { display: none; }
+  .hatch-cracking.show { display: block; }
+  .hatch-title { font-family: 'Fredoka One', cursive; font-size: 28px; text-align: center; }
+  .hatch-sub { color: var(--text2); text-align: center; font-size: 14px; }
+  .hatch-pet-reveal { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes popIn {
+    0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  .confetti-burst {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 301;
+  }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 13px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 16px 0 8px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(162,155,254,0.3); border-radius: 10px; }
+
+  /* Badge */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 50px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .badge-new { background: rgba(0,214,143,0.2); color: var(--green); }
+
+  .text-center { text-align: center; }
+  .mt8 { margin-top: 8px; }
+  .mt16 { margin-top: 16px; }
+
+  /* Mood indicator dot */
+  .mood-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 3px;
+  }
+  .mood-happy { background: var(--green); }
+  .mood-ok { background: var(--accent); }
+  .mood-sad { background: var(--accent2); }
+
+  /* ── CHALLENGE BANNER ── */
+  .challenge-banner {
+    background: linear-gradient(135deg, rgba(78,205,196,0.15), rgba(162,155,254,0.1));
+    border: 1.5px solid rgba(78,205,196,0.3);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .challenge-text { flex: 1; }
+  .challenge-title { font-weight: 800; font-size: 13px; color: var(--accent3); }
+  .challenge-desc { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+  .input-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .input-styled {
+    flex: 1;
+    background: rgba(255,255,255,0.07);
+    border: 1.5px solid rgba(162,155,254,0.2);
+    border-radius: 10px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    outline: none;
+  }
+  .input-styled:focus { border-color: var(--accent4); }
+  .input-styled::placeholder { color: var(--text2); font-weight: 400; }
+
+  select.input-styled {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title">PetVault</div>
+    <div class="coins-display" onclick="showScreen('wallet')">
+      <svg class="coin-icon" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="11" fill="#ffd700" stroke="#e8a800" stroke-width="1.5"/>
+        <text x="12" y="16.5" text-anchor="middle" font-size="11" font-weight="bold" fill="#8B6914" font-family="serif">PV</text>
+      </svg>
+      <span class="coins-amount" id="headerCoins">0</span>
+    </div>
+  </div>
+
+  <!-- SCREENS -->
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+
+    <div class="challenge-banner" id="dailyChallengeBanner">
+      <svg width="36" height="36" viewBox="0 0 36 36">
+        <circle cx="18" cy="18" r="17" fill="rgba(78,205,196,0.2)" stroke="rgba(78,205,196,0.4)" stroke-width="1.5"/>
+        <text x="18" y="23" text-anchor="middle" font-size="16" fill="#4ecdc4">★</text>
+      </svg>
+      <div class="challenge-text">
+        <div class="challenge-title" id="challengeTitle">Daily Challenge</div>
+        <div class="challenge-desc" id="challengeDesc">Loading...</div>
+      </div>
+      <button class="btn btn-sm" style="background:rgba(78,205,196,0.2);color:var(--accent3);border:1.5px solid rgba(78,205,196,0.3);" onclick="claimDailyChallenge()" id="challengeBtn">Claim</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="rgba(0,214,143,0.2)"/><text x="9" y="13" text-anchor="middle" font-size="10" fill="#00d68f">$</text></svg>
+        Log Real Savings
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Skipped a purchase? Log what you saved and earn coins!</div>
+      <div class="input-row">
+        <input class="input-styled" type="number" id="savingsAmt" placeholder="$ amount saved" min="1" step="0.01" style="flex:1;">
+        <select class="input-styled" id="savingsCategory" style="max-width:130px;">
+          <option value="coffee">☕ Coffee</option>
+          <option value="food">🍔 Food</option>
+          <option value="clothes">👕 Clothes</option>
+          <option value="gadget">📱 Gadget</option>
+          <option value="other">💸 Other</option>
+        </select>
+      </div>
+      <button class="btn btn-green btn-full mt8" onclick="logSavings()">
+        <svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="rgba(0,0,0,0.2)"/><path d="M5 8l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        Earn Coins
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="rgba(162,155,254,0.2)"/><text x="9" y="13" text-anchor="middle" font-size="11" fill="#a29bfe">♥</text></svg>
+        My Pets <span class="badge badge-new" id="petCountBadge">0</span>
+      </div>
+      <div class="active-pets-grid" id="petsGrid">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- HATCH -->
+  <div class="screen" id="screen-hatch">
+    <div class="card">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 18 18"><ellipse cx="9" cy="10" rx="7" ry="8" fill="rgba(245,166,35,0.2)"/><text x="9" y="14" text-anchor="middle" font-size="10" fill="#f5a623">?</text></svg>
+        Egg Shop
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Buy eggs to hatch new pets. Rarer eggs = more powerful creatures!</div>
+      <div class="eggs-grid" id="eggShopGrid"></div>
+    </div>
+
+    <div class="card" id="incubatorCard">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="8" fill="rgba(78,205,196,0.2)"/><text x="9" y="13" text-anchor="middle" font-size="10" fill="#4ecdc4">⏱</text></svg>
+        Incubator
+      </div>
+      <div id="incubatorSlots">
+        <div style="text-align:center;color:var(--text2);font-size:13px;padding:20px 0;">No eggs incubating. Buy one above!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div class="screen" id="screen-shop">
+    <div class="card">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 18 18"><rect x="2" y="7" width="14" height="10" rx="2" fill="rgba(245,166,35,0.2)"/><path d="M6 7V5a3 3 0 016 0v2" stroke="#f5a623" stroke-width="1.5" fill="none"/></svg>
+        Item Shop
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Spend coins on items that help your pets thrive!</div>
+      <div class="shop-grid" id="shopGrid"></div>
+    </div>
+  </div>
+
+  <!-- WALLET -->
+  <div class="screen" id="screen-wallet">
+    <div class="wallet-hero">
+      <div class="wallet-label">Your Vault</div>
+      <div class="wallet-amount">
+        <svg width="40" height="40" viewBox="0 0 40 40">
+          <circle cx="20" cy="20" r="19" fill="#ffd700" stroke="#e8a800" stroke-width="2"/>
+          <text x="20" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#8B6914" font-family="serif">PV</text>
+        </svg>
+        <span id="walletCoins">0</span>
+      </div>
+      <div class="wallet-saved" id="walletSaved">Total real money saved: $0.00</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Spending Resistance Score</div>
+      <div style="text-align:center;">
+        <div style="font-family:'Fredoka One',cursive;font-size:48px;color:var(--accent4);" id="resistanceScore">0</div>
+        <div style="font-size:13px;color:var(--text2);">Keep skipping real purchases to level up!</div>
+      </div>
+      <div class="stat-bar mt8" style="height:10px;">
+        <div class="stat-bar-fill" id="resistanceBar" style="width:0%;background:linear-gradient(90deg,var(--accent4),var(--accent3));"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Transaction History</div>
+      <div id="txList">
+        <div style="text-align:center;color:var(--text2);font-size:13px;padding:20px 0;">No transactions yet!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav">
+    <button class="nav-btn active" onclick="showScreen('home')" id="nav-home">
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><path d="M3 10.5L11 3l8 7.5V19a1 1 0 01-1 1H14v-5h-4v5H4a1 1 0 01-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </span>
+      Home
+    </button>
+    <button class="nav-btn" onclick="showScreen('hatch')" id="nav-hatch">
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><ellipse cx="11" cy="12" rx="8" ry="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 12c1-3 7-3 8 0" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      </span>
+      Hatch
+    </button>
+    <button class="nav-btn" onclick="showScreen('shop')" id="nav-shop">
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 5h11" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/><circle cx="9" cy="20" r="1" fill="currentColor"/><circle cx="16" cy="20" r="1" fill="currentColor"/></svg>
+      </span>
+      Shop
+    </button>
+    <button class="nav-btn" onclick="showScreen('wallet')" id="nav-wallet">
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="6" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2 10h18M6 6V4a2 2 0 012-2h6a2 2 0 012 2v2" stroke="currentColor" stroke-width="1.8" fill="none"/><circle cx="16" cy="14" r="1.5" fill="currentColor"/></svg>
+      </span>
+      Wallet
+    </button>
+  </div>
+</div>
+
+<!-- PET DETAIL MODAL -->
+<div class="modal-overlay" id="petModal" onclick="closePetModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="petModalContent"></div>
+  </div>
+</div>
+
+<!-- HATCH ANIMATION OVERLAY -->
+<div class="hatch-overlay" id="hatchOverlay">
+  <div id="hatchContent"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════
+let state = {
+  coins: 0,
+  totalSaved: 0,
+  resistanceXP: 0,
+  pets: [],
+  incubating: [],
+  inventory: {},
+  transactions: [],
+  lastDaily: null,
+  nextPetId: 1,
+};
+
+function save() { try { localStorage.setItem('pv_state', JSON.stringify(state)); } catch(e){} }
+function load() {
+  try {
+    const d = localStorage.getItem('pv_state');
+    if (d) state = { ...state, ...JSON.parse(d) };
+  } catch(e){}
+}
+
+// ════════════════════════════════════════
+//  PET DATA
+// ════════════════════════════════════════
+const PET_TYPES = [
+  { id: 'fluffox',   name: 'Fluffox',   rarity: 'common', baseColor: '#ff9f43', accent: '#ffeaa7', element: 'fire' },
+  { id: 'aqueel',    name: 'Aqueel',    rarity: 'common', baseColor: '#74b9ff', accent: '#dfe6e9', element: 'water' },
+  { id: 'leafkin',   name: 'Leafkin',   rarity: 'common', baseColor: '#55efc4', accent: '#81ecec', element: 'nature' },
+  { id: 'stonepup',  name: 'Stonepup',  rarity: 'rare',   baseColor: '#b2bec3', accent: '#636e72', element: 'earth' },
+  { id: 'sparkle',   name: 'Sparkle',   rarity: 'rare',   baseColor: '#fd79a8', accent: '#fdcfe8', element: 'light' },
+  { id: 'shadowfin', name: 'Shadowfin', rarity: 'rare',   baseColor: '#6c5ce7', accent: '#a29bfe', element: 'shadow' },
+  { id: 'crystalon', name: 'Crystalon', rarity: 'epic',   baseColor: '#00cec9', accent: '#81ecec', element: 'ice' },
+  { id: 'emberwing', name: 'Emberwing', rarity: 'epic',   baseColor: '#e17055', accent: '#fab1a0', element: 'fire' },
+  { id: 'voidwalker',name: 'Voidwalker',rarity: 'legend', baseColor: '#2d3436', accent: '#dfe6e9', element: 'void' },
+  { id: 'solaris',   name: 'Solaris',   rarity: 'legend', baseColor: '#fdcb6e', accent: '#ffeaa7', element: 'cosmic' },
+];
+
+const EGG_TYPES = [
+  { id: 'plain',   name: 'Plain Egg',   price: 50,  hatchTime: 60*2,   cost: 50,  rarities: ['common','common','common','rare'], color: '#dfe6e9', spots: '#b2bec3', accent: '#636e72' },
+  { id: 'speckled',name: 'Speckled',    price: 150, hatchTime: 60*5,   cost: 150, rarities: ['common','rare','rare','epic'],    color: '#ffeaa7', spots: '#fdcb6e', accent: '#e17055' },
+  { id: 'cosmic',  name: 'Cosmic Egg',  price: 400, hatchTime: 60*10,  cost: 400, rarities: ['rare','epic','epic','legend'],    color: '#2d3436', spots: '#6c5ce7', accent: '#a29bfe' },
+  { id: 'golden',  name: 'Golden Egg',  price: 800, hatchTime: 60*20,  cost: 800, rarities: ['epic','legend','legend'],         color: '#fdcb6e', spots: '#ffd700', accent: '#e8a800' },
+];
+
+const SHOP_ITEMS = [
+  { id: 'berry',    name: 'Star Berry',    desc: 'Restores 30 hunger',  price: 20,  effect: {hunger: 30},  category: 'food'  },
+  { id: 'feast',    name: 'Royal Feast',   desc: 'Restores full hunger', price: 60, effect: {hunger: 100}, category: 'food'  },
+  { id: 'toy',      name: 'Jingle Orb',    desc: '+25 happiness',        price: 30, effect: {happy: 25},   category: 'play'  },
+  { id: 'crystal',  name: 'XP Crystal',    desc: '+50 XP instantly',     price: 80, effect: {xp: 50},      category: 'grow'  },
+  { id: 'tonic',    name: 'Vitality Tonic',desc: 'Full health restore',  price: 100,effect: {health: 100}, category: 'health'},
+  { id: 'perfume',  name: 'Love Dust',     desc: '+40 happiness & health',price: 120,effect: {happy:40,health:40},category:'special'},
+];
+
+const DAILY_CHALLENGES = [
+  { title: 'Coffee Skip', desc: 'Skip your morning coffee today', reward: 30, category: 'coffee' },
+  { title: 'Lunch Home', desc: 'Eat lunch at home instead of eating out', reward: 50, category: 'food' },
+  { title: 'No Impulse', desc: 'Don\'t buy anything non-essential today', reward: 80, category: 'other' },
+  { title: 'Unsubscribe', desc: 'Cancel one subscription you don\'t use', reward: 120, category: 'other' },
+  { title: 'Pack a Snack', desc: 'Bring snacks from home instead of buying', reward: 25, category: 'food' },
+  { title: 'Window Shop Only', desc: 'Browse without buying — just look!', reward: 40, category: 'other' },
+];
+
+// ════════════════════════════════════════
+//  SVG PET ART GENERATOR
+// ════════════════════════════════════════
+function petSVG(type, size=80, level=1, mood='happy') {
+  const t = PET_TYPES.find(p => p.id === type) || PET_TYPES[0];
+  const s = size;
+  const cx = s/2, cy = s/2;
+  const evol = Math.min(3, Math.floor(level/5)+1); // evolution stage 1-3
+  const scale = 0.8 + evol*0.1;
+  const bodyR = (s*0.32)*scale;
+  const headR = (s*0.22)*scale;
+
+  // Eye expression
+  const eyeOpen = mood === 'sad' ? 2 : mood === 'ok' ? 3 : 4;
+  const mouthPath = mood === 'happy' ? `M${cx-8} ${cy+headR*0.3} Q${cx} ${cy+headR*0.7} ${cx+8} ${cy+headR*0.3}` :
+                    mood === 'sad'   ? `M${cx-8} ${cy+headR*0.5} Q${cx} ${cy+headR*0.1} ${cx+8} ${cy+headR*0.5}` :
+                                       `M${cx-6} ${cy+headR*0.4} L${cx+6} ${cy+headR*0.4}`;
+
+  // Type-specific features
+  let extras = '';
+  if (t.element === 'fire') {
+    extras = `<ellipse cx="${cx}" cy="${cy-bodyR-headR*0.3}" rx="${headR*0.6}" ry="${headR*0.8}" fill="${t.accent}" opacity="0.7"/>
+              <ellipse cx="${cx}" cy="${cy-bodyR-headR*0.5}" rx="${headR*0.35}" ry="${headR*0.5}" fill="${t.baseColor}" opacity="0.9"/>`;
+  } else if (t.element === 'water') {
+    extras = `<ellipse cx="${cx-bodyR*0.6}" cy="${cy+bodyR*0.5}" rx="${bodyR*0.25}" ry="${bodyR*0.5}" fill="${t.baseColor}" opacity="0.7"/>
+              <ellipse cx="${cx+bodyR*0.6}" cy="${cy+bodyR*0.5}" rx="${bodyR*0.25}" ry="${bodyR*0.5}" fill="${t.baseColor}" opacity="0.7"/>`;
+  } else if (t.element === 'nature') {
+    extras = `<circle cx="${cx-headR}" cy="${cy-bodyR*0.8}" r="${headR*0.5}" fill="${t.baseColor}"/>
+              <circle cx="${cx+headR}" cy="${cy-bodyR*0.9}" r="${headR*0.45}" fill="${t.accent}"/>
+              <circle cx="${cx}" cy="${cy-bodyR-headR*0.3}" r="${headR*0.4}" fill="${t.baseColor}"/>`;
+  } else if (t.element === 'shadow') {
+    extras = `<ellipse cx="${cx-bodyR}" cy="${cy-bodyR*0.5}" rx="${bodyR*0.3}" ry="${bodyR*0.5}" fill="${t.baseColor}" opacity="0.8"/>
+              <ellipse cx="${cx+bodyR}" cy="${cy-bodyR*0.5}" rx="${bodyR*0.3}" ry="${bodyR*0.5}" fill="${t.baseColor}" opacity="0.8"/>`;
+  } else if (t.element === 'light' || t.element === 'cosmic') {
+    extras = `<circle cx="${cx}" cy="${cy}" r="${bodyR*1.3}" fill="${t.accent}" opacity="0.15"/>
+              <circle cx="${cx}" cy="${cy}" r="${bodyR*1.6}" fill="${t.accent}" opacity="0.07"/>`;
+  } else if (t.element === 'ice') {
+    extras = `<polygon points="${cx},${cy-bodyR*1.5} ${cx-8},${cy-bodyR} ${cx+8},${cy-bodyR}" fill="${t.accent}" opacity="0.8"/>
+              <polygon points="${cx-bodyR*0.8},${cy-bodyR*0.3} ${cx-bodyR*1.2},${cy+bodyR*0.1} ${cx-bodyR*0.4},${cy+bodyR*0.1}" fill="${t.accent}" opacity="0.7"/>
+              <polygon points="${cx+bodyR*0.8},${cy-bodyR*0.3} ${cx+bodyR*1.2},${cy+bodyR*0.1} ${cx+bodyR*0.4},${cy+bodyR*0.1}" fill="${t.accent}" opacity="0.7"/>`;
+  } else if (t.element === 'void') {
+    extras = `<circle cx="${cx}" cy="${cy}" r="${bodyR*1.1}" fill="none" stroke="${t.accent}" stroke-width="1" opacity="0.4"/>
+              <circle cx="${cx}" cy="${cy}" r="${bodyR*1.4}" fill="none" stroke="${t.accent}" stroke-width="0.5" opacity="0.2"/>`;
+  } else if (t.element === 'earth') {
+    extras = `<ellipse cx="${cx}" cy="${cy+bodyR}" rx="${bodyR*1.1}" ry="${bodyR*0.35}" fill="${t.accent}" opacity="0.4"/>`;
+  }
+
+  // Stars for higher levels
+  let stars = '';
+  if (level >= 5) stars += `<circle cx="${cx-bodyR}" cy="${cy-bodyR}" r="2.5" fill="${t.accent}" opacity="0.9"/>`;
+  if (level >= 10) stars += `<circle cx="${cx+bodyR}" cy="${cy-bodyR}" r="2.5" fill="${t.accent}" opacity="0.9"/>`;
+  if (level >= 15) stars += `<circle cx="${cx}" cy="${cy-bodyR*1.3}" r="3" fill="${t.accent}"/>`;
+
+  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="bg${type}${s}" cx="50%" cy="50%">
+        <stop offset="0%" stop-color="${t.baseColor}" stop-opacity="0.08"/>
+        <stop offset="100%" stop-color="${t.baseColor}" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="body${type}${s}" cx="35%" cy="30%">
+        <stop offset="0%" stop-color="${t.accent}"/>
+        <stop offset="100%" stop-color="${t.baseColor}"/>
+      </radialGradient>
+    </defs>
+    <circle cx="${cx}" cy="${cy}" r="${s*0.47}" fill="url(#bg${type}${s})"/>
+    ${extras}
+    <!-- Body -->
+    <ellipse cx="${cx}" cy="${cy+headR*0.5}" rx="${bodyR}" ry="${bodyR*0.85}" fill="url(#body${type}${s})"/>
+    <!-- Head -->
+    <circle cx="${cx}" cy="${cy-bodyR*0.6}" r="${headR}" fill="${t.baseColor}"/>
+    <!-- Eyes -->
+    <ellipse cx="${cx-headR*0.38}" cy="${cy-bodyR*0.65}" rx="${headR*0.22}" ry="${eyeOpen}" fill="#2d3436"/>
+    <ellipse cx="${cx+headR*0.38}" cy="${cy-bodyR*0.65}" rx="${headR*0.22}" ry="${eyeOpen}" fill="#2d3436"/>
+    <circle cx="${cx-headR*0.32}" cy="${cy-bodyR*0.7}" r="1.2" fill="white"/>
+    <circle cx="${cx+headR*0.32}" cy="${cy-bodyR*0.7}" r="1.2" fill="white"/>
+    <!-- Nose -->
+    <ellipse cx="${cx}" cy="${cy-bodyR*0.52}" rx="2.5" ry="1.5" fill="#2d3436" opacity="0.6"/>
+    <!-- Mouth -->
+    <path d="${mouthPath}" stroke="#2d3436" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+    <!-- Cheeks -->
+    <circle cx="${cx-headR*0.55}" cy="${cy-bodyR*0.48}" r="${headR*0.18}" fill="${t.accent}" opacity="0.5"/>
+    <circle cx="${cx+headR*0.55}" cy="${cy-bodyR*0.48}" r="${headR*0.18}" fill="${t.accent}" opacity="0.5"/>
+    <!-- Feet -->
+    <ellipse cx="${cx-bodyR*0.45}" cy="${cy+bodyR*0.85}" rx="${bodyR*0.28}" ry="${bodyR*0.2}" fill="${t.baseColor}" opacity="0.8"/>
+    <ellipse cx="${cx+bodyR*0.45}" cy="${cy+bodyR*0.85}" rx="${bodyR*0.28}" ry="${bodyR*0.2}" fill="${t.baseColor}" opacity="0.8"/>
+    ${stars}
+    <!-- Level pip -->
+    ${level >= 10 ? `<circle cx="${cx+bodyR*0.7}" cy="${cy-bodyR*0.8}" r="4" fill="${t.accent}" stroke="white" stroke-width="1"/>` : ''}
+  </svg>`;
+}
+
+function eggSVG(eggType, size=56, progress=0) {
+  const e = EGG_TYPES.find(t => t.id === eggType) || EGG_TYPES[0];
+  const cx = size/2, cy = size*0.55;
+  const crack = progress > 0.6;
+  return `<svg width="${size}" height="${Math.round(size*1.25)}" viewBox="0 0 ${size} ${Math.round(size*1.25)}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="egg${eggType}${size}" cx="35%" cy="30%">
+        <stop offset="0%" stop-color="white" stop-opacity="0.4"/>
+        <stop offset="100%" stop-color="${e.color}" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="${cx}" cy="${cy}" rx="${size*0.42}" ry="${size*0.5}" fill="${e.color}"/>
+    <ellipse cx="${cx}" cy="${cy}" rx="${size*0.42}" ry="${size*0.5}" fill="url(#egg${eggType}${size})"/>
+    <!-- Spots -->
+    <circle cx="${cx-8}" cy="${cy-10}" r="4" fill="${e.spots}" opacity="0.5"/>
+    <circle cx="${cx+10}" cy="${cy+6}" r="3" fill="${e.spots}" opacity="0.4"/>
+    <circle cx="${cx-4}" cy="${cy+12}" r="2.5" fill="${e.spots}" opacity="0.45"/>
+    <circle cx="${cx+5}" cy="${cy-14}" r="2" fill="${e.accent}" opacity="0.6"/>
+    <!-- Shine -->
+    <ellipse cx="${cx-size*0.12}" cy="${cy-size*0.18}" rx="${size*0.09}" ry="${size*0.06}" fill="white" opacity="0.5" transform="rotate(-30,${cx},${cy})"/>
+    <!-- Crack if hatching -->
+    ${crack ? `<path d="M${cx-2} ${cy-size*0.25} L${cx+4} ${cy-size*0.1} L${cx-3} ${cy+size*0.05} L${cx+2} ${cy+size*0.2}" stroke="${e.accent}" stroke-width="2" fill="none" stroke-linecap="round"/>` : ''}
+    <!-- Progress glow -->
+    ${progress > 0.3 ? `<ellipse cx="${cx}" cy="${cy}" rx="${size*0.42}" ry="${size*0.5}" fill="none" stroke="${e.accent}" stroke-width="2" opacity="${0.3+progress*0.5}"/>` : ''}
+  </svg>`;
+}
+
+function shopItemSVG(item, size=60) {
+  const colors = {
+    food: '#55efc4', play: '#fd79a8', grow: '#a29bfe', health: '#74b9ff', special: '#ffd700'
+  };
+  const c = colors[item.category] || '#dfe6e9';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${size*0.45}" fill="${c}" opacity="0.2"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${size*0.3}" fill="${c}" opacity="0.35"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${size*0.15}" fill="${c}" opacity="0.8"/>
+    <circle cx="${size/2-size*0.08}" cy="${size/2-size*0.08}" r="3" fill="white" opacity="0.6"/>
+  </svg>`;
+}
+
+// ════════════════════════════════════════
+//  NAV / SCREEN
+// ════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+
+  if (name === 'home') renderHome();
+  if (name === 'hatch') renderHatch();
+  if (name === 'shop') renderShop();
+  if (name === 'wallet') renderWallet();
+}
+
+// ════════════════════════════════════════
+//  RENDER HOME
+// ════════════════════════════════════════
+function getMood(pet) {
+  const avg = (pet.hunger + pet.happiness + pet.health) / 3;
+  if (avg >= 65) return 'happy';
+  if (avg >= 35) return 'ok';
+  return 'sad';
+}
+function moodColor(m) { return m==='happy'?'var(--green)':m==='ok'?'var(--accent)':'var(--accent2)'; }
+
+function renderHome() {
+  updateCoinsUI();
+  renderDailyChallenge();
+  const grid = document.getElementById('petsGrid');
+  const slots = 4;
+  let html = '';
+
+  state.pets.slice(0, slots).forEach(pet => {
+    const type = PET_TYPES.find(t => t.id === pet.typeId) || PET_TYPES[0];
+    const mood = getMood(pet);
+    html += `<div class="pet-card" onclick="openPetModal(${pet.id})">
+      <div class="pet-card-art">${petSVG(pet.typeId, 80, pet.level, mood)}</div>
+      <div class="pet-card-name">${pet.name}</div>
+      <div class="pet-card-level">Lv.${pet.level} · ${type.rarity}</div>
+      <div class="pet-card-mood">
+        <span class="mood-dot mood-${mood}"></span>${mood}
+      </div>
+      <div class="stat-bar"><div class="stat-bar-fill" style="width:${pet.hunger}%;background:var(--accent);"></div></div>
+    </div>`;
+  });
+
+  const empty = slots - Math.min(state.pets.length, slots);
+  for (let i = 0; i < empty; i++) {
+    html += `<div class="empty-slot" onclick="showScreen('hatch')">
+      <div class="empty-slot-plus">+</div>
+      Hatch a pet
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+  document.getElementById('petCountBadge').textContent = state.pets.length;
+}
+
+// ════════════════════════════════════════
+//  DAILY CHALLENGE
+// ════════════════════════════════════════
+function renderDailyChallenge() {
+  const today = new Date().toDateString();
+  const idx = (new Date().getDate() + new Date().getMonth()) % DAILY_CHALLENGES.length;
+  const c = DAILY_CHALLENGES[idx];
+  document.getElementById('challengeTitle').textContent = c.title;
+  document.getElementById('challengeDesc').textContent = `${c.desc} · Reward: ${c.reward} coins`;
+  const btn = document.getElementById('challengeBtn');
+  if (state.lastDaily === today) {
+    btn.textContent = 'Done!';
+    btn.disabled = true;
+  } else {
+    btn.textContent = 'Claim';
+    btn.disabled = false;
+  }
+}
+
+function claimDailyChallenge() {
+  const today = new Date().toDateString();
+  if (state.lastDaily === today) return;
+  const idx = (new Date().getDate() + new Date().getMonth()) % DAILY_CHALLENGES.length;
+  const c = DAILY_CHALLENGES[idx];
+  state.lastDaily = today;
+  earnCoins(c.reward, `Daily: ${c.title}`);
+  showToast(`+${c.reward} coins! Challenge claimed!`);
+  renderDailyChallenge();
+}
+
+// ════════════════════════════════════════
+//  LOG SAVINGS
+// ════════════════════════════════════════
+function logSavings() {
+  const amt = parseFloat(document.getElementById('savingsAmt').value);
+  const cat = document.getElementById('savingsCategory').value;
+  if (!amt || amt <= 0) { showToast('Enter a valid amount!'); return; }
+
+  state.totalSaved += amt;
+  state.resistanceXP += Math.floor(amt * 2);
+
+  // Coins = 10 per dollar saved (rounded)
+  const coins = Math.max(5, Math.round(amt * 10));
+  earnCoins(coins, `Saved $${amt.toFixed(2)} (${cat})`);
+  showToast(`You saved $${amt.toFixed(2)}! +${coins} coins earned!`);
+  document.getElementById('savingsAmt').value = '';
+  save();
+}
+
+// ════════════════════════════════════════
+//  COINS
+// ════════════════════════════════════════
+function earnCoins(amount, reason) {
+  state.coins += amount;
+  state.transactions.unshift({ type:'earn', amount, reason, date: new Date().toLocaleDateString() });
+  if (state.transactions.length > 50) state.transactions.pop();
+  save();
+  updateCoinsUI();
+}
+
+function spendCoins(amount, reason) {
+  if (state.coins < amount) { showToast('Not enough coins!'); return false; }
+  state.coins -= amount;
+  state.transactions.unshift({ type:'spend', amount, reason, date: new Date().toLocaleDateString() });
+  if (state.transactions.length > 50) state.transactions.pop();
+  save();
+  updateCoinsUI();
+  return true;
+}
+
+function updateCoinsUI() {
+  document.getElementById('headerCoins').textContent = state.coins.toLocaleString();
+  const w = document.getElementById('walletCoins');
+  if (w) w.textContent = state.coins.toLocaleString();
+}
+
+// ════════════════════════════════════════
+//  HATCH SCREEN
+// ════════════════════════════════════════
+function renderHatch() {
+  // Egg shop
+  let html = '';
+  EGG_TYPES.forEach(egg => {
+    const rarityLabel = egg.rarities[0];
+    html += `<div class="egg-shop-item" onclick="buyEgg('${egg.id}')">
+      <div class="egg-art">${eggSVG(egg.id, 56)}</div>
+      <div class="egg-name">${egg.name}</div>
+      <div class="egg-price">${egg.price} coins</div>
+      <div class="egg-rarity rarity-${egg.rarities[egg.rarities.length-1]}">${egg.rarities[egg.rarities.length-1]}</div>
+    </div>`;
+  });
+  document.getElementById('eggShopGrid').innerHTML = html;
+
+  renderIncubator();
+}
+
+function buyEgg(eggId) {
+  const egg = EGG_TYPES.find(e => e.id === eggId);
+  if (!egg) return;
+  if (state.incubating.length >= 3) { showToast('Incubator full! (max 3 eggs)'); return; }
+  if (!spendCoins(egg.price, `Bought ${egg.name}`)) return;
+
+  state.incubating.push({
+    eggId,
+    startTime: Date.now(),
+    duration: egg.hatchTime * 1000,
+  });
+  save();
+  renderIncubator();
+  showToast(`${egg.name} is incubating!`);
+}
+
+function renderIncubator() {
+  const slots = document.getElementById('incubatorSlots');
+  if (state.incubating.length === 0) {
+    slots.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:13px;padding:20px 0;">No eggs incubating. Buy one above!</div>';
+    return;
+  }
+
+  let html = '';
+  state.incubating.forEach((inc, idx) => {
+    const egg = EGG_TYPES.find(e => e.id === inc.eggId);
+    const elapsed = Date.now() - inc.startTime;
+    const progress = Math.min(1, elapsed / inc.duration);
+    const ready = progress >= 1;
+    const remaining = ready ? 0 : Math.ceil((inc.duration - elapsed)/1000);
+    const mins = Math.floor(remaining/60), secs = remaining%60;
+
+    html += `<div class="incubator-slot">
+      <div class="incubator-egg">${eggSVG(inc.eggId, 52, progress)}</div>
+      <div class="incubator-info">
+        <div class="incubator-name">${egg.name}</div>
+        <div class="incubator-progress"><div class="incubator-fill" style="width:${progress*100}%"></div></div>
+        <div class="incubator-time">${ready ? 'Ready to hatch!' : `${mins}m ${secs}s remaining`}</div>
+      </div>
+      ${ready ? `<button class="btn btn-gold btn-sm" onclick="hatchEgg(${idx})">Hatch!</button>` : `<button class="btn btn-sm" style="background:rgba(255,255,255,0.08);color:var(--text2);" onclick="speedHatch(${idx})">Skip (${Math.ceil((inc.duration-elapsed)/1000/60*5)} coins)</button>`}
+    </div>`;
+  });
+  slots.innerHTML = html;
+}
+
+function speedHatch(idx) {
+  const inc = state.incubating[idx];
+  const elapsed = Date.now() - inc.startTime;
+  const remaining = Math.ceil((inc.duration - elapsed)/1000);
+  const cost = Math.ceil(remaining / 60 * 5);
+  if (!spendCoins(cost, 'Speed hatch')) return;
+  state.incubating[idx].startTime = Date.now() - state.incubating[idx].duration;
+  save();
+  renderIncubator();
+}
+
+function hatchEgg(idx) {
+  const inc = state.incubating[idx];
+  const egg = EGG_TYPES.find(e => e.id === inc.eggId);
+  const elapsed = Date.now() - inc.startTime;
+  if (elapsed < inc.duration) { showToast('Not ready yet!'); return; }
+
+  // Pick rarity
+  const rarities = egg.rarities;
+  const chosenRarity = rarities[Math.floor(Math.random() * rarities.length)];
+  const candidates = PET_TYPES.filter(p => p.rarity === chosenRarity);
+  const type = candidates[Math.floor(Math.random() * candidates.length)];
+
+  const newPet = {
+    id: state.nextPetId++,
+    typeId: type.id,
+    name: type.name,
+    level: 1,
+    xp: 0,
+    hunger: 80,
+    happiness: 80,
+    health: 100,
+  };
+
+  state.incubating.splice(idx, 1);
+  state.pets.push(newPet);
+  save();
+
+  showHatchAnimation(type, newPet);
+}
+
+function showHatchAnimation(type, pet) {
+  const overlay = document.getElementById('hatchOverlay');
+  overlay.classList.add('open');
+
+  document.getElementById('hatchContent').innerHTML = `
+    <div class="hatch-egg-wrap" id="hatchEggWrap">
+      ${eggSVG(EGG_TYPES[0].id, 120, 0.7)}
+    </div>
+    <div class="hatch-title">Your egg is hatching!</div>
+    <div class="hatch-sub">Tap to hatch faster...</div>
+  `;
+
+  let taps = 0;
+  overlay.onclick = () => {
+    taps++;
+    if (taps > 3) {
+      // Reveal pet
+      document.getElementById('hatchContent').innerHTML = `
+        <div class="hatch-pet-reveal">${petSVG(type.id, 140, 1, 'happy')}</div>
+        <div class="hatch-title" style="color:var(--accent4);">New Pet!</div>
+        <div class="hatch-sub" style="font-size:16px;color:var(--text);">${type.name} <span style="color:var(--text2);font-size:13px;">(${type.rarity})</span></div>
+        <div class="hatch-sub">Element: ${type.element}</div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="closeHatch()">Add to Family!</button>
+      `;
+      overlay.onclick = null;
+      spawnConfetti();
+    }
+  };
+}
+
+function closeHatch() {
+  document.getElementById('hatchOverlay').classList.remove('open');
+  showScreen('home');
+  showToast('New pet joined your family!');
+}
+
+function spawnConfetti() {
+  const colors = ['#ff6b6b','#ffd700','#a29bfe','#4ecdc4','#55efc4','#fd79a8'];
+  const canvas = document.createElement('canvas');
+  canvas.className = 'confetti-burst';
+  canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:400;width:100%;height:100%';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const particles = Array.from({length:60}, () => ({
+    x: Math.random()*canvas.width,
+    y: canvas.height*0.5 + (Math.random()-0.5)*200,
+    vx: (Math.random()-0.5)*8,
+    vy: -(Math.random()*12+4),
+    color: colors[Math.floor(Math.random()*colors.length)],
+    r: Math.random()*5+3,
+    alpha: 1,
+  }));
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.3; p.alpha -= 0.015;
+      ctx.globalAlpha = Math.max(0,p.alpha);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    if (++frame < 80) requestAnimationFrame(draw);
+    else canvas.remove();
+  }
+  draw();
+}
+
+// ════════════════════════════════════════
+//  PET MODAL
+// ════════════════════════════════════════
+function openPetModal(petId) {
+  const pet = state.pets.find(p => p.id === petId);
+  if (!pet) return;
+  const type = PET_TYPES.find(t => t.id === pet.typeId) || PET_TYPES[0];
+  const mood = getMood(pet);
+  const xpNext = pet.level * 100;
+
+  document.getElementById('petModalContent').innerHTML = `
+    <div class="modal-pet-art">${petSVG(pet.typeId, 120, pet.level, mood)}</div>
+    <div class="modal-pet-name">${pet.name}</div>
+    <div class="modal-pet-sub">Level ${pet.level} · ${type.element} · ${type.rarity}</div>
+
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-label">Hunger</div>
+        <div class="stat-val" style="color:var(--accent)">${pet.hunger}%</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:${pet.hunger}%;background:var(--accent)"></div></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Happiness</div>
+        <div class="stat-val" style="color:var(--accent2)">${pet.happiness}%</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:${pet.happiness}%;background:var(--accent2)"></div></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Health</div>
+        <div class="stat-val" style="color:var(--green)">${pet.health}%</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:${pet.health}%;background:var(--green)"></div></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">XP to Level Up</div>
+        <div class="stat-val" style="color:var(--accent4)">${pet.xp}/${xpNext}</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:${(pet.xp/xpNext)*100}%;background:var(--accent4)"></div></div>
+      </div>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn btn-gold" onclick="feedPet(${pet.id})">Feed (10🪙)</button>
+      <button class="btn btn-primary" onclick="playWithPet(${pet.id})">Play (5🪙)</button>
+    </div>
+    <div class="actions-row">
+      <button class="btn btn-green" onclick="healPet(${pet.id})">Heal (20🪙)</button>
+      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text2);" onclick="renamePet(${pet.id})">Rename</button>
+    </div>
+    <button class="btn btn-red btn-sm btn-full mt16" onclick="releasePet(${pet.id})" style="opacity:0.6;">Release pet</button>
+  `;
+
+  document.getElementById('petModal').classList.add('open');
+}
+
+function closePetModal(e) {
+  if (e.target === document.getElementById('petModal')) {
+    document.getElementById('petModal').classList.remove('open');
+  }
+}
+
+function feedPet(id) {
+  if (!spendCoins(10, 'Fed pet')) return;
+  const pet = state.pets.find(p => p.id === id);
+  pet.hunger = Math.min(100, pet.hunger + 25);
+  pet.xp += 5;
+  checkLevelUp(pet);
+  save(); openPetModal(id);
+  showToast('Yum! Your pet is happily fed!');
+}
+
+function playWithPet(id) {
+  if (!spendCoins(5, 'Played with pet')) return;
+  const pet = state.pets.find(p => p.id === id);
+  pet.happiness = Math.min(100, pet.happiness + 20);
+  pet.hunger = Math.max(0, pet.hunger - 5);
+  pet.xp += 8;
+  checkLevelUp(pet);
+  save(); openPetModal(id);
+  showToast('Your pet had a blast!');
+}
+
+function healPet(id) {
+  if (!spendCoins(20, 'Healed pet')) return;
+  const pet = state.pets.find(p => p.id === id);
+  pet.health = Math.min(100, pet.health + 40);
+  pet.xp += 10;
+  checkLevelUp(pet);
+  save(); openPetModal(id);
+  showToast('Pet is feeling much better!');
+}
+
+function renamePet(id) {
+  const pet = state.pets.find(p => p.id === id);
+  const name = prompt('New name for your pet:', pet.name);
+  if (name && name.trim()) { pet.name = name.trim(); save(); openPetModal(id); }
+}
+
+function releasePet(id) {
+  if (!confirm('Release this pet? This cannot be undone.')) return;
+  state.pets = state.pets.filter(p => p.id !== id);
+  save();
+  document.getElementById('petModal').classList.remove('open');
+  showScreen('home');
+}
+
+function checkLevelUp(pet) {
+  const needed = pet.level * 100;
+  if (pet.xp >= needed) {
+    pet.xp -= needed;
+    pet.level++;
+    showToast(`${pet.name} leveled up to ${pet.level}!`);
+    earnCoins(pet.level * 5, `${pet.name} leveled up!`);
+  }
+}
+
+// ════════════════════════════════════════
+//  SHOP
+// ════════════════════════════════════════
+function renderShop() {
+  let html = '';
+  SHOP_ITEMS.forEach(item => {
+    html += `<div class="shop-item">
+      <div class="shop-item-art">${shopItemSVG(item, 60)}</div>
+      <div class="shop-item-name">${item.name}</div>
+      <div class="shop-item-desc">${item.desc}</div>
+      <button class="btn btn-gold btn-sm btn-full" onclick="buyShopItem('${item.id}')">${item.price} coins</button>
+    </div>`;
+  });
+  document.getElementById('shopGrid').innerHTML = html;
+}
+
+function buyShopItem(itemId) {
+  const item = SHOP_ITEMS.find(i => i.id === itemId);
+  if (!item) return;
+  if (state.pets.length === 0) { showToast('You need a pet first!'); return; }
+  if (!spendCoins(item.price, `Bought ${item.name}`)) return;
+
+  // Apply to first (or active) pet
+  const pet = state.pets[0];
+  if (item.effect.hunger) pet.hunger = Math.min(100, pet.hunger + item.effect.hunger);
+  if (item.effect.happy) pet.happiness = Math.min(100, pet.happiness + item.effect.happy);
+  if (item.effect.health) pet.health = Math.min(100, pet.health + item.effect.health);
+  if (item.effect.xp) { pet.xp += item.effect.xp; checkLevelUp(pet); }
+
+  save();
+  showToast(`Used ${item.name} on ${pet.name}!`);
+}
+
+// ════════════════════════════════════════
+//  WALLET
+// ════════════════════════════════════════
+function renderWallet() {
+  updateCoinsUI();
+  document.getElementById('walletSaved').textContent = `Total real money saved: $${state.totalSaved.toFixed(2)}`;
+
+  const xp = state.resistanceXP;
+  const score = Math.floor(xp / 10);
+  const nextMile = Math.ceil(xp / 500) * 500;
+  document.getElementById('resistanceScore').textContent = score;
+  document.getElementById('resistanceBar').style.width = ((xp % 500) / 500 * 100) + '%';
+
+  const list = document.getElementById('txList');
+  if (state.transactions.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:13px;padding:20px 0;">No transactions yet!</div>';
+    return;
+  }
+  list.innerHTML = state.transactions.slice(0,20).map(tx => `
+    <div class="tx-item">
+      <div class="tx-icon tx-${tx.type}">${tx.type==='earn'?'↑':'↓'}</div>
+      <div class="tx-info">
+        <div class="tx-name">${tx.reason}</div>
+        <div class="tx-date">${tx.date}</div>
+      </div>
+      <div class="tx-amount ${tx.type}">${tx.type==='earn'?'+':'-'}${tx.amount}</div>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ════════════════════════════════════════
+//  PET DECAY (runs every minute)
+// ════════════════════════════════════════
+function decayPets() {
+  state.pets.forEach(pet => {
+    pet.hunger = Math.max(0, pet.hunger - 2);
+    pet.happiness = Math.max(0, pet.happiness - 1);
+    if (pet.hunger < 20) pet.health = Math.max(0, pet.health - 2);
+  });
+  save();
+}
+
+// ════════════════════════════════════════
+//  INCUBATOR TICK
+// ════════════════════════════════════════
+function tickIncubator() {
+  const screen = document.querySelector('.screen.active');
+  if (screen && screen.id === 'screen-hatch') renderIncubator();
+}
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+load();
+updateCoinsUI();
+renderHome();
+
+// If no coins yet give starter coins
+if (state.coins === 0 && state.transactions.length === 0) {
+  earnCoins(100, 'Welcome bonus!');
+  showToast('Welcome! You got 100 starter coins!');
+}
+
+setInterval(decayPets, 60*1000);
+setInterval(tickIncubator, 1000);
+</script>
+</body>
+</html>
