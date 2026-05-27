@@ -19,26 +19,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install Android SDK command-line tools
+      - name: Install missing SDK components into pre-installed SDK
         run: |
-          sudo apt-get install -y wget unzip
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk/cmdline-tools
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip
-          mv cmdline-tools latest
-          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/build-tools/34.0.0" >> $GITHUB_PATH
-
-      - name: Accept licenses and install SDK packages
-        run: |
-          yes | sdkmanager --sdk_root=$HOME/android-sdk --licenses || true
-          sdkmanager --sdk_root=$HOME/android-sdk \
-            "platforms;android-34" \
-            "build-tools;34.0.0" \
-            "platform-tools"
+          # Use the runner's pre-installed ANDROID_HOME — do NOT set ANDROID_SDK_ROOT
+          echo "Using ANDROID_HOME: $ANDROID_HOME"
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+          echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools"     >> $GITHUB_PATH
 
       - name: Generate Keystore
         run: |
@@ -65,235 +53,232 @@ jobs:
           mkdir -p PetVaultApp/app/src/main/res/mipmap-xxhdpi
           mkdir -p PetVaultApp/gradle/wrapper
 
-          # ── Copy game HTML ──────────────────────────────────────
+          # ── Copy game HTML ───────────────────────────────────────
           cp index.html PetVaultApp/app/src/main/assets/index.html
 
-          # ── settings.gradle ─────────────────────────────────────
+          # ── settings.gradle ──────────────────────────────────────
           cat > PetVaultApp/settings.gradle << 'EOF'
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-          rootProject.name = "PetVault"
-          include ':app'
-          EOF
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "PetVault"
+include ':app'
+EOF
 
           # ── root build.gradle ────────────────────────────────────
           cat > PetVaultApp/build.gradle << 'EOF'
-          plugins {
-              id 'com.android.application' version '8.2.2' apply false
-          }
-          EOF
+plugins {
+    id 'com.android.application' version '8.2.2' apply false
+}
+EOF
 
           # ── app/build.gradle ─────────────────────────────────────
           cat > PetVaultApp/app/build.gradle << 'EOF'
-          plugins {
-              id 'com.android.application'
-          }
-          android {
-              namespace 'com.petvault.app'
-              compileSdk 34
-              defaultConfig {
-                  applicationId "com.petvault.app"
-                  minSdk 24
-                  targetSdk 34
-                  versionCode 1
-                  versionName "1.0"
-              }
-              signingConfigs {
-                  release {
-                      storeFile file("../../../../petvault.jks")
-                      storePassword "petvault123"
-                      keyAlias "petvault"
-                      keyPassword "petvault123"
-                  }
-              }
-              buildTypes {
-                  release {
-                      minifyEnabled false
-                      signingConfig signingConfigs.release
-                  }
-              }
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
-          }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-          }
-          EOF
+plugins {
+    id 'com.android.application'
+}
+android {
+    namespace 'com.petvault.app'
+    compileSdk 34
+    defaultConfig {
+        applicationId "com.petvault.app"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+    signingConfigs {
+        release {
+            storeFile file("../../../../petvault.jks")
+            storePassword "petvault123"
+            keyAlias "petvault"
+            keyPassword "petvault123"
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+}
+EOF
 
-          # ── Gradle wrapper properties ─────────────────────────────
+          # ── Gradle wrapper properties ────────────────────────────
           cat > PetVaultApp/gradle/wrapper/gradle-wrapper.properties << 'EOF'
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          EOF
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+EOF
 
-          # ── gradlew ──────────────────────────────────────────────
+          # ── gradlew shim ─────────────────────────────────────────
           cat > PetVaultApp/gradlew << 'GRADLEW'
-          #!/bin/sh
-          exec gradle "$@"
-          GRADLEW
+#!/bin/sh
+exec gradle "$@"
+GRADLEW
           chmod +x PetVaultApp/gradlew
 
           # ── AndroidManifest.xml ──────────────────────────────────
           cat > PetVaultApp/app/src/main/AndroidManifest.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <application
-                  android:allowBackup="true"
-                  android:icon="@mipmap/ic_launcher"
-                  android:label="PetVault"
-                  android:supportsRtl="true"
-                  android:theme="@style/AppTheme"
-                  android:usesCleartextTraffic="true">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:configChanges="orientation|screenSize|keyboardHidden"
-                      android:screenOrientation="portrait"
-                      android:windowSoftInputMode="adjustResize">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="PetVault"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+EOF
 
-          # ── MainActivity.java ─────────────────────────────────────
+          # ── MainActivity.java ────────────────────────────────────
           cat > PetVaultApp/app/src/main/java/com/petvault/app/MainActivity.java << 'EOF'
-          package com.petvault.app;
+package com.petvault.app;
 
-          import android.app.Activity;
-          import android.os.Bundle;
-          import android.view.View;
-          import android.view.WindowManager;
-          import android.webkit.WebSettings;
-          import android.webkit.WebView;
-          import android.webkit.WebViewClient;
-          import android.webkit.WebChromeClient;
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.View;
+import android.view.WindowManager;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.webkit.WebChromeClient;
 
-          public class MainActivity extends Activity {
+public class MainActivity extends Activity {
 
-              private WebView webView;
+    private WebView webView;
 
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-                  // Full-screen immersive
-                  getWindow().setFlags(
-                      WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                      WindowManager.LayoutParams.FLAG_FULLSCREEN
-                  );
-                  getWindow().getDecorView().setSystemUiVisibility(
-                      View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                      View.SYSTEM_UI_FLAG_FULLSCREEN |
-                      View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                  );
+        getWindow().setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        );
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+            View.SYSTEM_UI_FLAG_FULLSCREEN |
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        );
 
-                  webView = new WebView(this);
-                  setContentView(webView);
+        webView = new WebView(this);
+        setContentView(webView);
 
-                  WebSettings settings = webView.getSettings();
-                  settings.setJavaScriptEnabled(true);
-                  settings.setDomStorageEnabled(true);
-                  settings.setAllowFileAccess(true);
-                  settings.setAllowFileAccessFromFileURLs(true);
-                  settings.setAllowUniversalAccessFromFileURLs(true);
-                  settings.setMediaPlaybackRequiresUserGesture(false);
-                  settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        WebSettings settings = webView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-                  webView.setWebViewClient(new WebViewClient());
-                  webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebViewClient(new WebViewClient());
+        webView.setWebChromeClient(new WebChromeClient());
+        webView.loadUrl("file:///android_asset/index.html");
+    }
 
-                  webView.loadUrl("file:///android_asset/index.html");
-              }
+    @Override
+    public void onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack();
+        } else {
+            super.onBackPressed();
+        }
+    }
+}
+EOF
 
-              @Override
-              public void onBackPressed() {
-                  if (webView.canGoBack()) {
-                      webView.goBack();
-                  } else {
-                      super.onBackPressed();
-                  }
-              }
-          }
-          EOF
-
-          # ── res/values/styles.xml ─────────────────────────────────
+          # ── res/values/styles.xml ────────────────────────────────
           cat > PetVaultApp/app/src/main/res/values/styles.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
-                  <item name="android:windowBackground">#0d0720</item>
-                  <item name="android:statusBarColor">#0d0720</item>
-                  <item name="android:navigationBarColor">#0d0720</item>
-              </style>
-          </resources>
-          EOF
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#0d0720</item>
+        <item name="android:statusBarColor">#0d0720</item>
+        <item name="android:navigationBarColor">#0d0720</item>
+    </style>
+</resources>
+EOF
 
-          # ── Launcher icons (simple SVG-based PNG via Python) ──────
+          # ── Launcher icons via Python ─────────────────────────────
           python3 - << 'PYEOF'
-          import struct, zlib, base64
+import struct, zlib, os
 
-          def make_png(size, bg, fg):
-              def chunk(name, data):
-                  c = zlib.crc32(name + data) & 0xffffffff
-                  return struct.pack('>I', len(data)) + name + data + struct.pack('>I', c)
-              sig = b'\x89PNG\r\n\x1a\n'
-              ihdr = chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0))
-              rows = []
-              for y in range(size):
-                  row = b'\x00'
-                  for x in range(size):
-                      dx, dy = x - size//2, y - size//2
-                      dist = (dx*dx + dy*dy) ** 0.5
-                      if dist <= size*0.46:
-                          t = max(0, 1 - dist/(size*0.46))
-                          r = int(bg[0] + (fg[0]-bg[0])*t)
-                          g = int(bg[1] + (fg[1]-bg[1])*t)
-                          b = int(bg[2] + (fg[2]-bg[2])*t)
-                          row += bytes([r, g, b])
-                      else:
-                          row += bytes(bg)
-                  rows.append(row)
-              raw = b''.join(rows)
-              idat = chunk(b'IDAT', zlib.compress(raw))
-              iend = chunk(b'IEND', b'')
-              return sig + ihdr + idat + iend
+def make_png(size, bg, fg):
+    def chunk(name, data):
+        c = zlib.crc32(name + data) & 0xffffffff
+        return struct.pack('>I', len(data)) + name + data + struct.pack('>I', c)
+    sig = b'\x89PNG\r\n\x1a\n'
+    ihdr = chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0))
+    rows = []
+    for y in range(size):
+        row = b'\x00'
+        for x in range(size):
+            dx, dy = x - size//2, y - size//2
+            dist = (dx*dx + dy*dy) ** 0.5
+            if dist <= size*0.46:
+                t = max(0, 1 - dist/(size*0.46))
+                r = int(bg[0] + (fg[0]-bg[0])*t)
+                g = int(bg[1] + (fg[1]-bg[1])*t)
+                b = int(bg[2] + (fg[2]-bg[2])*t)
+                row += bytes([r, g, b])
+            else:
+                row += bytes(bg)
+        rows.append(row)
+    raw = b''.join(rows)
+    idat = chunk(b'IDAT', zlib.compress(raw))
+    iend = chunk(b'IEND', b'')
+    return sig + ihdr + idat + iend
 
-          configs = [
-              ('mipmap-mdpi',    48,  (13,7,32), (162,155,254)),
-              ('mipmap-hdpi',    72,  (13,7,32), (162,155,254)),
-              ('mipmap-xhdpi',   96,  (13,7,32), (162,155,254)),
-              ('mipmap-xxhdpi',  144, (13,7,32), (162,155,254)),
-          ]
-          import os
-          for folder, size, bg, fg in configs:
-              path = f'PetVaultApp/app/src/main/res/{folder}/ic_launcher.png'
-              os.makedirs(os.path.dirname(path), exist_ok=True)
-              with open(path, 'wb') as f:
-                  f.write(make_png(size, bg, fg))
-          print('Icons generated.')
-          PYEOF
+configs = [
+    ('mipmap-mdpi',   48,  (13,7,32), (162,155,254)),
+    ('mipmap-hdpi',   72,  (13,7,32), (162,155,254)),
+    ('mipmap-xhdpi',  96,  (13,7,32), (162,155,254)),
+    ('mipmap-xxhdpi', 144, (13,7,32), (162,155,254)),
+]
+for folder, size, bg, fg in configs:
+    path = f'PetVaultApp/app/src/main/res/{folder}/ic_launcher.png'
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'wb') as f:
+        f.write(make_png(size, bg, fg))
+print('Icons generated.')
+PYEOF
 
       - name: Install Gradle
         run: |
@@ -304,10 +289,10 @@ jobs:
       - name: Build release APK
         working-directory: PetVaultApp
         run: |
-          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          # Use ANDROID_HOME only — never set ANDROID_SDK_ROOT
           gradle assembleRelease --no-daemon --stacktrace
 
-      - name: Locate and rename APK
+      - name: Locate and copy APK
         run: |
           APK=$(find PetVaultApp -name "*.apk" | head -1)
           echo "Found APK: $APK"
