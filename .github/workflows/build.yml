@@ -115,6 +115,10 @@ jobs:
           write(f"{B}/gradlew", "#!/bin/sh\nexec gradle \"$@\"\n")
           os.chmod(f"{B}/gradlew", 0o755)
 
+          write(f"{B}/gradle.properties",
+          "android.useAndroidX=true\n"
+          "android.enableJetifier=true\n")
+
           assets_dir = f"{B}/app/src/main/assets"
           os.makedirs(assets_dir, exist_ok=True)
           shutil.copy("index.html", f"{assets_dir}/index.html")
